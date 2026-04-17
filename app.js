@@ -1,5 +1,4 @@
-const cors = require('cors')
-app.use(cors()) // 允许所有跨域请求
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
