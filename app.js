@@ -3,8 +3,9 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var cors = require('cors');
 
-// 引入已有的路由
+// 引入路由
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var goodsRouter = require('./routes/goods');
@@ -12,22 +13,19 @@ var orderRouter = require('./routes/order');
 var shopRouter = require('./routes/shop');
 var statsRouter = require('./routes/stats');
 var articleRouter = require('./routes/article');
-
-// 引入活动接口路由
 var activityRouter = require('./routes/activity');
 
 var app = express();
 
-// 核心：修复跨域配置（支持POST/DELETE/OPTIONS）
-app.all('*', function (req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  if (req.method.toLowerCase() === 'options') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// ✅ 1. 必须放在最前面，确保所有请求都能跨域
+app.use(cors({
+  origin: '*', // 开发阶段用*，上线后再改成你的域名 https://xumin8888.github.io
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// ✅ 2. 处理OPTIONS预检请求
+app.options('*', cors());
 
 // 模板引擎配置
 app.set('views', path.join(__dirname, 'views'));
@@ -57,19 +55,9 @@ app.use(function (req, res, next) {
 
 // 全局错误处理
 app.use(function (err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  if (err.status === 404) {
-    return res.status(404).json({
-      code: 1,
-      msg: '接口不存在：' + req.originalUrl
-    });
-  }
-  
   res.status(err.status || 500).json({
     code: 1,
-    msg: '服务器内部错误'
+    msg: err.message || '服务器内部错误'
   });
 });
 
